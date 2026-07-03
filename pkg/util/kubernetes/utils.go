@@ -3,6 +3,7 @@ package kubernetes
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -19,12 +20,12 @@ type ServiceInfo struct {
 
 // 构造 FRP 服务名称
 func GenerateServiceName(info ServiceInfo) (string, error) {
-	if info.Protocol == "" || info.Name == "" || info.Namespace == "" || info.Cluster == "" || info.Port == "" {
+	if info.Protocol == "" || info.Name == "" || info.Namespace == "" || info.Cluster == "" || info.Port <= 0 {
 		return "", fmt.Errorf("missing required field")
 	}
 
 	// 主体部分
-	host := fmt.Sprintf("%s.%s.%s:%s", info.Name, info.Namespace, info.Cluster, info.Port)
+	host := fmt.Sprintf("%s.%s.%s:%d", info.Name, info.Namespace, info.Cluster, info.Port)
 	path := ""
 	if info.Type != "" && info.IP != "" {
 		path = fmt.Sprintf("/%s/%s", info.Type, info.IP)
@@ -61,7 +62,10 @@ func ParseServiceName(uri string) (*ServiceInfo, error) {
 	name := parts[0]
 	namespace := parts[1]
 	cluster := parts[2]
-	port := u.Port()
+	port, err := strconv.ParseInt(u.Port(), 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid port %q: %w", u.Port(), err)
+	}
 
 	// 路径部分
 	pathParts := strings.Split(strings.Trim(u.Path, "/"), "/")
