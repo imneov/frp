@@ -271,7 +271,7 @@ func NewService(cfg *v1.ServerConfig) (*Service, error) {
 	if cfg.QUICBindPort > 0 {
 		address := net.JoinHostPort(cfg.BindAddr, strconv.Itoa(cfg.QUICBindPort))
 		quicTLSCfg := tlsConfig.Clone()
-		quicTLSCfg.NextProtos = []string{"frp"}
+		quicTLSCfg.NextProtos = []string{"h3"}
 		svr.quicListener, err = quic.ListenAddr(address, quicTLSCfg, &quic.Config{
 			MaxIdleTimeout:     time.Duration(cfg.Transport.QUIC.MaxIdleTimeout) * time.Second,
 			MaxIncomingStreams: int64(cfg.Transport.QUIC.MaxIncomingStreams),

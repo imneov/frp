@@ -169,7 +169,7 @@ func (pxy *XTCPProxy) listenByQUIC(listenConn *net.UDPConn, _ *net.UDPAddr, star
 		xl.Warnf("create tls config error: %v", err)
 		return
 	}
-	tlsConfig.NextProtos = []string{"frp"}
+	tlsConfig.NextProtos = []string{"h3"}
 	quicListener, err := quic.Listen(listenConn, tlsConfig,
 		&quic.Config{
 			MaxIdleTimeout:     time.Duration(pxy.clientCfg.Transport.QUIC.MaxIdleTimeout) * time.Second,
