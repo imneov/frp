@@ -8,11 +8,20 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-frp_version=`./bin/frps --version`
+frp_version=`./bin/kube-tunnel-server --version`
 echo "build version: $frp_version"
 
 # cross_compiles
 make -f ./Makefile.cross-compiles
+
+for file in ./release/frpc_*; do
+    [ -e "$file" ] || continue
+    mv "$file" "${file%/*}/kube-tunnel-client_${file##*/frpc_}"
+done
+for file in ./release/frps_*; do
+    [ -e "$file" ] || continue
+    mv "$file" "${file%/*}/kube-tunnel-server_${file##*/frps_}"
+done
 
 rm -rf ./release/packages
 mkdir -p ./release/packages
@@ -30,29 +39,29 @@ for os in $os_all; do
             if [ "x${extra}" != x"_" ]; then
                 suffix="${os}_${arch}_${extra}"
             fi
-            frp_dir_name="frp_${frp_version}_${suffix}"
-            frp_path="./packages/frp_${frp_version}_${suffix}"
+            frp_dir_name="kube-tunnel_${frp_version}_${suffix}"
+            frp_path="./packages/kube-tunnel_${frp_version}_${suffix}"
 
             if [ "x${os}" = x"windows" ]; then
-                if [ ! -f "./frpc_${os}_${arch}.exe" ]; then
+                if [ ! -f "./kube-tunnel-client_${os}_${arch}.exe" ]; then
                     continue
                 fi
-                if [ ! -f "./frps_${os}_${arch}.exe" ]; then
+                if [ ! -f "./kube-tunnel-server_${os}_${arch}.exe" ]; then
                     continue
                 fi
                 mkdir ${frp_path}
-                mv ./frpc_${os}_${arch}.exe ${frp_path}/frpc.exe
-                mv ./frps_${os}_${arch}.exe ${frp_path}/frps.exe
+                mv ./kube-tunnel-client_${os}_${arch}.exe ${frp_path}/kube-tunnel-client.exe
+                mv ./kube-tunnel-server_${os}_${arch}.exe ${frp_path}/kube-tunnel-server.exe
             else
-                if [ ! -f "./frpc_${suffix}" ]; then
+                if [ ! -f "./kube-tunnel-client_${suffix}" ]; then
                     continue
                 fi
-                if [ ! -f "./frps_${suffix}" ]; then
+                if [ ! -f "./kube-tunnel-server_${suffix}" ]; then
                     continue
                 fi
                 mkdir ${frp_path}
-                mv ./frpc_${suffix} ${frp_path}/frpc
-                mv ./frps_${suffix} ${frp_path}/frps
+                mv ./kube-tunnel-client_${suffix} ${frp_path}/kube-tunnel-client
+                mv ./kube-tunnel-server_${suffix} ${frp_path}/kube-tunnel-server
             fi  
             cp ../LICENSE ${frp_path}
             cp -f ../conf/frpc.toml ${frp_path}

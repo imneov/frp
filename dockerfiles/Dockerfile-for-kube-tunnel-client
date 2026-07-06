@@ -1,0 +1,14 @@
+FROM golang:1.23 AS building
+
+COPY . /building
+WORKDIR /building
+
+RUN make kube-tunnel-client
+
+FROM alpine:3
+
+RUN apk add --no-cache tzdata
+
+COPY --from=building /building/bin/kube-tunnel-client /usr/bin/kube-tunnel-client
+
+ENTRYPOINT ["/usr/bin/kube-tunnel-client"]
