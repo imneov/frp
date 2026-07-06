@@ -3,10 +3,10 @@ export GO111MODULE=on
 LDFLAGS := -s -w
 
 # Image URL to use all building/pushing image targets
-REPO ?= tkeelio
-TAG ?= latest
-IMG_FRPC ?= ${REPO}/kube-frpc:${TAG}
-IMG_FRPS ?= ${REPO}/kube-frps:${TAG}
+REPO ?= quanzhenglong.com/edge
+TAG ?= v1.0
+IMG_FRPC ?= ${REPO}/kube-tunnel-client:${TAG}
+IMG_FRPS ?= ${REPO}/kube-tunnel-server:${TAG}
 
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
@@ -14,7 +14,7 @@ CRD_OPTIONS ?= "crd:allowDangerousTypes=true"
 
 all: env fmt build
 
-build: frps frpc
+build: kube-tunnel-server kube-tunnel-client
 
 env:
 	@go version
@@ -38,11 +38,11 @@ gci:
 vet:
 	go vet ./...
 
-frps:
-	env CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -tags frps -o bin/frps ./cmd/frps
+kube-tunnel-server:
+	env CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -tags frps -o bin/kube-tunnel-server ./cmd/frps
 
-frpc:
-	env CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -tags frpc -o bin/frpc ./cmd/frpc
+kube-tunnel-client:
+	env CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -tags frpc -o bin/kube-tunnel-client ./cmd/frpc
 
 test: gotest
 
@@ -102,27 +102,27 @@ docker-push:
 	docker push ${IMG_FRPS}
 
 clean:
-	rm -f ./bin/frpc
-	rm -f ./bin/frps
+	rm -f ./bin/kube-tunnel-client
+	rm -f ./bin/kube-tunnel-server
 	rm -rf ./lastversion
 
-build-local-frpc: ; $(info $(M)...Begin to build frp binaries.)  @ ## Build frp binaries.
-	CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -tags frps -o bin/frps ./cmd/frps
+build-local-kube-tunnel-server: ; $(info $(M)...Begin to build frp binaries.)  @ ## Build frp binaries.
+	CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -tags frps -o bin/kube-tunnel-server ./cmd/frps
 
-build-frpc-image: ; $(info $(M)...Begin to build frp image.)  @ ## Build frp image.
-	docker build -t ${IMG_FRPC}  -f dockerfiles/Dockerfile-for-frpc .
+build-kube-tunnel-client-image: ; $(info $(M)...Begin to build frp image.)  @ ## Build frp image.
+	docker build -t ${IMG_FRPC}  -f dockerfiles/Dockerfile-for-kube-tunnel-client .
 
-build-cross-frpc-image: ; $(info $(M)...Begin to build frp cross-platform image.)  @ ## Build frp cross-platform image.
-	docker buildx build -t ${IMG_FRPC} --push --platform linux/amd64,linux/arm64  -f dockerfiles/Dockerfile-for-frpc .
+build-cross-kube-tunnel-client-image: ; $(info $(M)...Begin to build frp cross-platform image.)  @ ## Build frp cross-platform image.
+	docker buildx build -t ${IMG_FRPC} --push --platform linux/amd64,linux/arm64  -f dockerfiles/Dockerfile-for-kube-tunnel-client .
 
-build-local-frps: ; $(info $(M)...Begin to build frp binaries.)  @ ## Build frp binaries.
-	CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -tags frpc -o bin/frpc ./cmd/frpc
+build-local-kube-tunnel-client: ; $(info $(M)...Begin to build frp binaries.)  @ ## Build frp binaries.
+	CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -tags frpc -o bin/kube-tunnel-client ./cmd/frpc
 
-build-frps-image: ; $(info $(M)...Begin to build frp image.)  @ ## Build frp image.
-	docker build -t ${IMG_FRPS}  -f dockerfiles/Dockerfile-for-frps .
+build-kube-tunnel-server-image: ; $(info $(M)...Begin to build frp image.)  @ ## Build frp image.
+	docker build -t ${IMG_FRPS}  -f dockerfiles/Dockerfile-for-kube-tunnel-server .
 
-build-cross-frps-image: ; $(info $(M)...Begin to build frp cross-platform image.)  @ ## Build frp cross-platform image.
-	docker buildx build -t ${IMG_FRPS} --push --platform linux/amd64,linux/arm64  -f dockerfiles/Dockerfile-for-frps .
+build-cross-kube-tunnel-server-image: ; $(info $(M)...Begin to build frp cross-platform image.)  @ ## Build frp cross-platform image.
+	docker buildx build -t ${IMG_FRPS} --push --platform linux/amd64,linux/arm64  -f dockerfiles/Dockerfile-for-kube-tunnel-server .
 
 ##@ Dependencies
 
