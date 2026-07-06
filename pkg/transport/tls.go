@@ -22,6 +22,7 @@ import (
 	"encoding/pem"
 	"math/big"
 	"os"
+	"time"
 )
 
 func newCustomTLSKeyPair(certfile, keyfile string) (*tls.Certificate, error) {
@@ -32,12 +33,28 @@ func newCustomTLSKeyPair(certfile, keyfile string) (*tls.Certificate, error) {
 	return &tlsCert, nil
 }
 
-func newRandomTLSKeyPair() *tls.Certificate {
+func newRandomTLSKeyPair(serverName string) *tls.Certificate {
+	if serverName == "" {
+		serverName = "network.rise.io"
+	}
+
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		panic(err)
 	}
-	template := x509.Certificate{SerialNumber: big.NewInt(1)}
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serial, err := rand.Int(rand.Reader, serialNumberLimit)
+	if err != nil {
+		panic(err)
+	}
+	template := x509.Certificate{
+		SerialNumber: serial,
+		DNSNames:              []string{serverName},
+		NotBefore:             time.Now().Add(-time.Hour),
+		NotAfter:              time.Now().AddDate(10, 0, 0),
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+	}
 	certDER, err := x509.CreateCertificate(
 		rand.Reader,
 		&template,
@@ -76,7 +93,7 @@ func NewServerTLSConfig(certPath, keyPath, caPath string) (*tls.Config, error) {
 
 	if certPath == "" || keyPath == "" {
 		// server will generate tls conf by itself
-		cert := newRandomTLSKeyPair()
+		cert := newRandomTLSKeyPair("")
 		base.Certificates = []tls.Certificate{*cert}
 	} else {
 		cert, err := newCustomTLSKeyPair(certPath, keyPath)
